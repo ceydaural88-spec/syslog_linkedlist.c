@@ -1,0 +1,67 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Log {
+    char zaman[50];
+    char seviye[20];
+    char mesaj[200];
+
+    struct Log* next;
+    struct Log* prev;
+};
+
+struct Log* head = NULL;
+
+void logEkle(char zaman[], char seviye[], char mesaj[]) {
+
+    struct Log* yeni = (struct Log*)malloc(sizeof(struct Log));
+
+    strcpy(yeni->zaman, zaman);
+    strcpy(yeni->seviye, seviye);
+    strcpy(yeni->mesaj, mesaj);
+
+    yeni->next = NULL;
+    yeni->prev = NULL;
+
+    if (head == NULL) {
+        head = yeni;
+        return;
+    }
+
+    struct Log* temp = head;
+
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+
+    temp->next = yeni;
+    yeni->prev = temp;
+}
+
+void loglariGoster() {
+
+    struct Log* temp = head;
+
+    while (temp != NULL) {
+        printf("[%s] %s : %s\n",
+               temp->zaman,
+               temp->seviye,
+               temp->mesaj);
+
+        temp = temp->next;
+    }
+}
+
+int main() {
+
+    logEkle("12:00", "INFO", "System started");
+    logEkle("12:05", "WARNING", "Disk usage high");
+    logEkle("12:10", "ERROR", "Network connection lost");
+
+    printf("Syslog Kayitlari:\n\n");
+
+    loglariGoster();
+
+    return 0;
+}
