@@ -1,43 +1,59 @@
 # syslog_linkedlist.c
-# Linux Syslog Bilgilerinin Bağlı Liste ile Gösterilmesi
 
-Bu proje Linux işletim sisteminde kullanılan Syslog mekanizmasını incelemek ve syslog verilerini bağlı liste veri yapısı ile saklayan bir uygulama geliştirmek amacıyla hazırlanmıştır.
+Linux Syslog Management with Linked List
+Bu proje, Linux işletim sistemindeki Syslog (Sistem Günlükleri) mekanizmasını anlamak ve bu verileri Bağlı Liste (Linked List) veri yapısı kullanarak dinamik bir şekilde yönetmek amacıyla geliştirilmiştir.
 
-## Syslog Nedir?
+📌 Proje Hakkında
+Syslog, bir işletim sisteminde arka planda çalışan servislerin, çekirdek olaylarının ve uygulama hatalarının kronolojik olarak kaydedildiği bir sistemdir. Bu projede:
 
-Syslog Linux ve Unix tabanlı sistemlerde kullanılan bir sistem günlükleme mekanizmasıdır. Sistem olaylarını kayıt altına alır.
+Log kayıtları için özel bir struct yapısı oluşturulmuştur.
 
-Örneğin:
+Veriler, bellek verimliliği sağlamak adına Tek Yönlü Bağlı Liste (Singly Linked List) üzerinde tutulmuştur.
 
-- kullanıcı girişleri
-- sistem hataları
-- servis başlatma ve durdurma
-- ağ bağlantıları
+Gerçek zamanlı sistem saati kullanılarak her log kaydına otomatik "Zaman Damgası (Timestamp)" eklenmiştir.
 
-gibi olaylar log kayıtları olarak tutulur.
+🛠 Kullanılan Teknolojiler ve Veri Yapıları
+Dil: C Programlama Dili
 
-## Kullanılan Veri Yapısı
+Veri Yapısı: Tek Yönlü Bağlı Liste (Singly Linked List)
 
-Bu projede Syslog kayıtlarını saklamak için **Doubly Linked List (Çift Bağlı Liste)** veri yapısı kullanılmıştır.
+Bellek Yönetimi: Dinamik Bellek Tahsisi (malloc, free)
 
-Her düğüm şu bilgileri içerir:
+Kütüphaneler: <stdio.h>, <stdlib.h>, <string.h>, <time.h>
 
-- zaman
-- log seviyesi
-- log mesajı
-- önceki düğüm adresi
-- sonraki düğüm adresi
+🚀 Neden Bağlı Liste Tercih Edildi?
+Syslog verileri için bağlı liste seçilmesinin temel teknik nedenleri şunlardır:
 
-## Neden Doubly Linked List?
+Dinamik Boyut: Sistem günlüğü kayıtlarının sayısı önceden kestirilemez. Bağlı listeler, çalışma zamanında (runtime) ihtiyaç duyulduğu kadar bellek ayırarak bellek israfını önler.
 
-Syslog kayıtları için çift bağlı liste tercih edilmiştir çünkü:
+Hızlı Ekleme (O(1)): Yeni loglar her zaman listenin sonuna eklenir. Tail pointer kullanımıyla veya basit bir iterasyonla verimli bir şekilde kronolojik sıralama korunur.
 
-- log kayıtları ileri ve geri gezilebilir
-- log silme işlemleri kolaydır
-- dinamik bellek kullanımı sağlar
-- büyük log sistemlerinde verimli çalışır
+Log Rotation (Silme Kolaylığı): En eski logların silinmesi gerektiğinde (FIFO mantığı), listenin başındaki düğümü silmek dizilere göre çok daha performanslıdır.
 
-## Programın Çalışması
+📂 Kod Yapısı ve Fonksiyonlar
+Proje içerisinde kullanılan temel bileşenler şunlardır:
+
+SyslogNode: Log bilgilerini (Zaman, Öncelik, Mesaj) ve bir sonraki düğüm adresini tutan ana yapı.
+
+createLogNode(): Bellekte yeni bir alan ayırarak log verilerini hazırlar.
+
+addLogToList(): Hazırlanan logu listenin sonuna (kronolojik sıraya) ekler.
+
+displayLogs(): Tüm listeyi kullanıcıya anlamlı bir tablo formatında sunar.
+
+💻 Çalıştırma Talimatları
+Depoyu bilgisayarınıza clone'layın:
+
+Bash
+git clone https://github.com/kullaniciadi/repo-adi.git
+C dosyasını derleyin:
+
+Bash
+gcc main.c -o syslog_app
+Uygulamayı çalıştırın:
+
+Bash
+./syslog_app
 
 Program yeni log kayıtları oluşturur ve bu kayıtları bağlı listeye ekler. Daha sonra tüm log kayıtları ekrana yazdırılır.
 
