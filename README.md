@@ -1,62 +1,51 @@
-# syslog_linkedlist.c
 
-Linux Syslog Management with Linked List
-Bu proje, Linux işletim sistemindeki Syslog (Sistem Günlükleri) mekanizmasını anlamak ve bu verileri Bağlı Liste (Linked List) veri yapısı kullanarak dinamik bir şekilde yönetmek amacıyla geliştirilmiştir.
+🐧 Linux Syslog Management Simulation with Linked Lists
+Bu çalışma, Linux işletim sisteminin kalbi sayılan Syslog mekanizmasını, bilgisayar bilimlerinin temel taşlarından biri olan Bağlı Liste (Linked List) veri yapısıyla simüle etmek amacıyla geliştirilmiştir. Proje, hem sistem programlama mantığını hem de dinamik bellek yönetimini bir araya getirmektedir.
 
-📌 Proje Hakkında
-Syslog, bir işletim sisteminde arka planda çalışan servislerin, çekirdek olaylarının ve uygulama hatalarının kronolojik olarak kaydedildiği bir sistemdir. Bu projede:
+🛠 Teknik Analiz ve Derinlemesine Tasarım
+1. Syslog Mekanizması ve Operasyonel Önemi
+Syslog, Unix tabanlı sistemlerde tüm olay kayıtlarını (event logs) standartlaştıran bir protokoldür.
 
-Log kayıtları için özel bir struct yapısı oluşturulmuştur.
+Merkezi Yönetim: Farklı servislerin (Apache, SSH, Kernel vb.) kendi günlüklerini tek bir standart formatta üretmesini sağlar.
 
-Veriler, bellek verimliliği sağlamak adına Tek Yönlü Bağlı Liste (Singly Linked List) üzerinde tutulmuştur.
+Analiz Kapasitesi: Sistem yöneticileri, /var/log altındaki bu verileri analiz ederek donanım arızalarını veya siber saldırı girişimlerini henüz büyümeden tespit edebilir.
 
-Gerçek zamanlı sistem saati kullanılarak her log kaydına otomatik "Zaman Damgası (Timestamp)" eklenmiştir.
+2. Verilerin Bağlı Liste Yapısıyla Modellenmesi
+Syslog kayıtları statik bir yapıya sahip değildir; sistem çalıştığı sürece sürekli akar. Bu akışı modellemek için:
 
-🛠 Kullanılan Teknolojiler ve Veri Yapıları
-Dil: C Programlama Dili
+Her bir günlük girdisi, bellekte birbirinden bağımsız ancak birbirine işaretçilerle (pointers) bağlı düğümler (nodes) olarak tutulur.
 
-Veri Yapısı: Tek Yönlü Bağlı Liste (Singly Linked List)
+Bu model, verilerin bellekte ardışık olma zorunluluğunu ortadan kaldırarak esneklik sağlar.
 
-Bellek Yönetimi: Dinamik Bellek Tahsisi (malloc, free)
+3. Seçilen Veri Yapısı: Tek Yönlü Bağlı Liste (Singly Linked List)
+Projenin temelinde Tek Yönlü Bağlı Liste yapısı kullanılmıştır. Bu seçim rastgele değil, syslog verilerinin karakteristiğine uygun olarak yapılmıştır.
 
-Kütüphaneler: <stdio.h>, <stdlib.h>, <string.h>, <time.h>
+4. Teknik Tercih Gerekçeleri ve Syslog İlişkisi
+Dinamik Ölçeklenebilirlik: Sabit boyutlu bir dizi (array) kullanılsaydı, log sayısı dizinin kapasitesini aştığında sistem çökerdi. Bağlı liste ile RAM elverdiği sürece sınırsız sayıda log tutulabilir.
 
-🚀 Neden Bağlı Liste Tercih Edildi?
-Syslog verileri için bağlı liste seçilmesinin temel teknik nedenleri şunlardır:
+Düşük Karmaşıklıklı Ekleme (O(n) veya O(1)): Yeni loglar kronolojik olarak her zaman listenin sonuna eklenir. Bu, syslog'un zaman akışına tam uyum sağlar.
 
-Dinamik Boyut: Sistem günlüğü kayıtlarının sayısı önceden kestirilemez. Bağlı listeler, çalışma zamanında (runtime) ihtiyaç duyulduğu kadar bellek ayırarak bellek israfını önler.
+Bellek Optimizasyonu: Sadece aktif olan log kayıtları için bellek tüketilir. Boş dizi hücreleri gibi gereksiz yer kaplayan alanlar oluşmaz.
 
-Hızlı Ekleme (O(1)): Yeni loglar her zaman listenin sonuna eklenir. Tail pointer kullanımıyla veya basit bir iterasyonla verimli bir şekilde kronolojik sıralama korunur.
+Log Rotation (Eski Kayıtların Yönetimi): Linux sistemlerde yer açmak için en eski loglar silinir. Bağlı listede listenin en başından (Head) düğüm silmek, dizilerdeki gibi tüm elemanları kaydırma zahmetine girmeden anında gerçekleştirilir.
 
-Log Rotation (Silme Kolaylığı): En eski logların silinmesi gerektiğinde (FIFO mantığı), listenin başındaki düğümü silmek dizilere göre çok daha performanslıdır.
+💻 Yazılım Mimarisi ve Fonksiyon Detayları
+Kod içerisindeki tüm bileşenler, profesyonel standartlarda isimlendirilmiştir:
 
-📂 Kod Yapısı ve Fonksiyonlar
-Proje içerisinde kullanılan temel bileşenler şunlardır:
+struct SyslogNode:
 
-SyslogNode: Log bilgilerini (Zaman, Öncelik, Mesaj) ve bir sonraki düğüm adresini tutan ana yapı.
+timestamp: Logun oluşturulma zamanını saniye hassasiyetinde tutar.
 
-createLogNode(): Bellekte yeni bir alan ayırarak log verilerini hazırlar.
+priority: Mesajın önem derecesini (INFO, WARNING, ERROR, CRITICAL) belirler.
 
-addLogToList(): Hazırlanan logu listenin sonuna (kronolojik sıraya) ekler.
+message: Gerçek olay verisini içeren metin alanıdır.
 
-displayLogs(): Tüm listeyi kullanıcıya anlamlı bir tablo formatında sunar.
+createLogNode(): Yeni bir log girişi için bellekten (malloc) güvenli bir şekilde yer ayırır ve sistem saatini düğüme enjekte eder.
 
-💻 Çalıştırma Talimatları
-Depoyu bilgisayarınıza clone'layın:
+addLogToList(): Mevcut listenin sonuna giderek yeni düğümü zincire dahil eder.
 
+displayLogs(): Tüm listeyi iteratif bir şekilde gezerek kullanıcıya okunabilir bir rapor sunar.
+
+🚀 Çalıştırma ve Test
 Bash
-git clone https://github.com/kullaniciadi/repo-adi.git
-C dosyasını derleyin:
-
-Bash
-gcc main.c -o syslog_app
-Uygulamayı çalıştırın:
-
-Bash
-./syslog_app
-
-Program yeni log kayıtları oluşturur ve bu kayıtları bağlı listeye ekler. Daha sonra tüm log kayıtları ekrana yazdırılır.
-
-## Kullanılan Dil
-
-C Programming Language
+./syslog_manager
