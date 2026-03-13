@@ -1,67 +1,97 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-struct Log {
-    char zaman[50];
-    char seviye[20];
-    char mesaj[200];
+/* * YAPI (STRUCT) TANIMI: SyslogNode
+ * Bu yapı, her bir log kaydını temsil eden bağlı liste düğümüdür.
+ * İçerisinde log verilerini ve bir sonraki düğüme işaret eden pointer'ı barındırır.
+ */
+typedef struct SyslogNode {
+    char timestamp[32];    // Logun oluştuğu zaman (Zaman damgası)
+    char priority[16];     // Logun öncelik seviyesi (INFO, ERROR, DEBUG vb.)
+    char message[256];     // Log mesajının içeriği
+    struct SyslogNode* next; // Bir sonraki log düğümüne işaretçi
+} SyslogNode;
 
-    struct Log* next;
-    struct Log* prev;
-};
+/* * FONKSİYON: createLogNode
+ * Amacı: Parametre olarak aldığı verilerle yeni bir Syslog düğümü oluşturmak.
+ * Bellekte yer ayırır (malloc) ve verileri düğüm içine kopyalar.
+ */
+SyslogNode* createLogNode(const char* priority, const char* message) {
+    SyslogNode* newNode = (SyslogNode*)malloc(sizeof(SyslogNode));
+    if (newNode == NULL) {
+        printf("Bellek hatasi!\n");
+        return NULL;
+    }
 
-struct Log* head = NULL;
+    // Sistem zamanını al ve timestamp alanına yaz
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(newNode->timestamp, sizeof(newNode->timestamp), "%Y-%m-%d %H:%M:%S", t);
 
-void logEkle(char zaman[], char seviye[], char mesaj[]) {
+    // Öncelik ve Mesaj bilgilerini kopyala
+    strncpy(newNode->priority, priority, sizeof(newNode->priority));
+    strncpy(newNode->message, message, sizeof(newNode->message));
 
-    struct Log* yeni = (struct Log*)malloc(sizeof(struct Log));
+    newNode->next = NULL; // Yeni düğüm listenin sonu olacağı için next NULL yapılır.
+    return newNode;
+}
 
-    strcpy(yeni->zaman, zaman);
-    strcpy(yeni->seviye, seviye);
-    strcpy(yeni->mesaj, mesaj);
-
-    yeni->next = NULL;
-    yeni->prev = NULL;
-
-    if (head == NULL) {
-        head = yeni;
+/* * FONKSİYON: addLogToList
+ * Amacı: Yeni oluşturulan log düğümünü bağlı listenin sonuna eklemek.
+ * Neden Sonuna? Syslog kayıtları kronolojik (zaman sırasına göre) tutulduğu için.
+ */
+void addLogToList(SyslogNode** head, const char* priority, const char* message) {
+    SyslogNode* newNode = createLogNode(priority, message);
+    if (*head == NULL) {
+        *head = newNode; // Liste boşsa, kafa düğümü bu olur.
         return;
     }
 
-    struct Log* temp = head;
-
+    SyslogNode* temp = *head;
     while (temp->next != NULL) {
-        temp = temp->next;
+        temp = temp->next; // Listenin sonuna kadar git
     }
-
-    temp->next = yeni;
-    yeni->prev = temp;
+    temp->next = newNode; // Son düğümün 'next' değerini yeni düğüme bağla
 }
 
-void loglariGoster() {
-
-    struct Log* temp = head;
-
-    while (temp != NULL) {
-        printf("[%s] %s : %s\n",
-               temp->zaman,
-               temp->seviye,
-               temp->mesaj);
-
-        temp = temp->next;
+/* * FONKSİYON: displayLogs
+ * Amacı: Bağlı listedeki tüm log kayıtlarını ekrana düzenli bir şekilde basmak.
+ */
+void displayLogs(SyslogNode* head) {
+    printf("\n--- SISTEM GUNLUK KAYITLARI (SYSLOG) ---\n");
+    printf("%-20s | %-10s | %s\n", "ZAMAN", "SEVIYE", "MESAJ");
+    printf("------------------------------------------------------------\n");
+    
+    SyslogNode* current = head;
+    while (current != NULL) {
+        printf("%-20s | %-10s | %s\n", current->timestamp, current->priority, current->message);
+        current = current->next;
     }
 }
 
+/* * ANA FONKSİYON (MAIN)
+ */
 int main() {
+    SyslogNode* logListHead = NULL; // Listenin başlangıç noktası
 
-    logEkle("12:00", "INFO", "System started");
-    logEkle("12:05", "WARNING", "Disk usage high");
-    logEkle("12:10", "ERROR", "Network connection lost");
+    // Örnek log kayıtlarını listeye ekleyelim
+    addLogToList(&logListHead, "INFO", "Sistem baslatildi.");
+    addLogToList(&logListHead, "WARNING", "Disk doluluk orani %85'e ulasti.");
+    addLogToList(&logListHead, "ERROR", "Veritabani baglantisi koptu!");
+    addLogToList(&logListHead, "DEBUG", "Kullanici yetkilendirme modulu calistirildi.");
 
-    printf("Syslog Kayitlari:\n\n");
+    // Logları ekrana yazdır
+    displayLogs(logListHead);
 
-    loglariGoster();
+    // Belleği serbest bırakma (Cleanup)
+    SyslogNode* temp;
+    while (logListHead != NULL) {
+        temp = logListHead;
+        logListHead = logListHead->next;
+        free(temp);
+    }
 
     return 0;
 }
